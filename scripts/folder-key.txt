@@ -1,0 +1,26 @@
+/project-root
+│
+├── /backend
+│   ├── /data
+│   │   ├── fetch_data.py                 # Script to fetch and store stock data
+│   │   └── detect_patterns.py            # Script to detect high volatility and double-bottom patterns
+│   ├── /db
+│   │   └── init_db.py                    # Script to initialize SQLite database (create tables)
+│   ├── app.py                            # Flask backend entry point (API routes)
+│   ├── requirements.txt                  # Python dependencies for the backend
+│
+├── /frontend
+│   ├── /public                           # Public directory (static assets, HTML)
+│   │   └── index.html                    # Main HTML file
+│   ├── /src
+│   │   ├── /components
+│   │   │   ├── CandlestickChart.js       # React component (Plotly.js for interactive chart)
+│   │   │   ├── Controls.js               # Play/Pause/Speed Controls
+│   │   └── App.js                        # Main React app
+│   ├── package.json                      # Frontend dependencies (React, Plotly.js, etc.)
+│
+├── /scripts
+│   ├── run_fetch_data.sh                 # Shell script to run the data fetching process
+│   ├── run_detect_patterns.sh            # Shell script to run pattern detection
+│
+├── README.md                             # Documentation for the project
