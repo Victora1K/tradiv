@@ -11,3 +11,17 @@
 
 #!.yarn/cache
 .pnp.*
+
+# Node.js modules
+node_modules/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# SQLite databases
+*.sqlite3
+db/stocks.db
+
+# Environment variables
+.env

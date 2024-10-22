@@ -12,10 +12,18 @@
 ├── /frontend
 │   ├── /public                           # Public directory (static assets, HTML)
 │   │   └── index.html                    # Main HTML file
-│   ├── /src
-│   │   ├── /components
-│   │   │   ├── CandlestickChart.js       # React component (Plotly.js for interactive chart)
-│   │   │   ├── Controls.js               # Play/Pause/Speed Controls
+│   ├──src/
+│   ├──│
+│   ├──├── components/
+│   ├──│   ├── CandlestickChart.js
+│   ├──│   ├── PlaybackControls.js
+│   ├──│   ├── TradingControls.js
+│   ├──│   └── Dashboard.js  // Main dashboard
+│   ├──│
+│   ├──├── utils/
+│   ├──│   ├── TradingLogic.js  // Modularized trading functions
+│   ├──│   └── PlaybackLogic.js  // Modularized playback functions
+│   ├──             # Play/Pause/Speed Controls
 │   │   └── App.js                        # Main React app
 │   ├── package.json                      # Frontend dependencies (React, Plotly.js, etc.)
 │

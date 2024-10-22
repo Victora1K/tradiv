@@ -10,48 +10,52 @@ def calculate_volatility(prices, period=14):
     volatility = np.std(daily_returns[-period:])
     return volatility
 
-def detect_double_bottoms(prices, dates, tolerance=0.5):
-    bottoms = []
+# Updated double bottom detection to handle multiple bottoms and return the symbol
+def detect_double_bottoms(prices, dates, symbol, tolerance=0.05):
+    double_bottoms = []  # To store multiple pairs of double bottoms (tuples of symbol, start and end dates)
+    current_bottom = None  # Track the current lowest bottom
     
     for i in range(1, len(prices) - 1):
         print(f"Checking index {i} with price {prices[i]} (previous: {prices[i-1]}, next: {prices[i+1]})")
-        
-        # Detect a bottom: price is lower than the previous and next day
-        if prices[i] < prices[i-1] and prices[i] < prices[i+1]:
+
+        # Detect a potential bottom: price is lower than the previous and next day
+        if prices[i] <= prices[i-1] and prices[i] < prices[i+1]:
             print(f"Found potential bottom at index {i}, price {prices[i]}")
-            
-            # If a previous bottom exists, check if the current bottom is within the tolerance range
-            if len(bottoms) > 0:
-                previous_bottom_index = bottoms[-1]
-                previous_bottom_price = prices[previous_bottom_index]
+
+            # If we haven't locked in the first bottom, set it to current
+            if current_bottom is None:
+                print(f"Setting current bottom to index {i}, price {prices[i]}")
+                current_bottom = i
+
+            # If we already have a locked first bottom, check for a second bottom within tolerance
+            elif current_bottom is not None:
+                previous_bottom_price = prices[current_bottom]
+                current_price = prices[i]
                 
-                print(f"Comparing with previous bottom at index {previous_bottom_index}, price {previous_bottom_price}")
-                
-                # Adjust the tolerance to check the relative percentage difference
-                price_difference = abs(prices[i] - previous_bottom_price) / previous_bottom_price
+                # Calculate the price difference relative to the first bottom
+                price_difference = abs(current_price - previous_bottom_price) / previous_bottom_price
+                print(f"Comparing second bottom at index {i} with first bottom at index {current_bottom}")
                 print(f"Price difference: {price_difference}, Tolerance: {tolerance}")
-                
-                # Check if the two bottoms are within the tolerance percentage
-                if price_difference <= tolerance:
-                    print(f"Bottom at index {i} is within tolerance: {tolerance}")
-                    
-                    # Ensure there's a gap of at least 5 days between the two bottoms
-                    if i - previous_bottom_index > 5:
-                        print(f"Bottoms are more than 5 indices apart: adding index {i}")
-                        bottoms.append(i)
+
+                # Check if the current bottom is within tolerance and more than 5 candles apart
+                if price_difference <= tolerance and i - current_bottom >= 2:
+                    print(f"Double bottom confirmed between indices {current_bottom} and {i}")
+
+                    # Store the pair of bottoms (symbol, dates of the two bottoms)
+                    double_bottoms.append((symbol, dates[current_bottom], dates[i]))
+
+                    # Reset current_bottom to None to search for more double bottoms
+                    current_bottom = None
                 else:
-                    print(f"Bottom at index {i} is NOT within tolerance.")
-            else:
-                # Add the first bottom
-                print(f"Adding first bottom at index {i}")
-                bottoms.append(i)
+                    print(f"Bottom at index {i} does not meet criteria (tolerance or distance).")
+                    current_bottom = i  # Re-assign this as the new potential first bottom
     
-    # Return the timestamps of the two bottoms if we have exactly two; otherwise, return an empty list
-    if len(bottoms) == 2:
-        print(f"Double bottom found at indices: {bottoms}")
-        return [dates[bottoms[0]], dates[bottoms[1]]]
+    # Return the list of double bottom pairs (if any)
+    if len(double_bottoms) > 0:
+        print(f"Double bottoms found: {double_bottoms}")
+        return double_bottoms
     else:
-        print(f"No double bottom found. Bottoms detected: {bottoms}")
+        print(f"No double bottoms found.")
         return []
 
 def detect_and_store_patterns(symbol):
@@ -76,45 +80,27 @@ def detect_and_store_patterns(symbol):
             ''', (symbol, dates[i-14], dates[i], volatility))
 
     # Detect double bottoms
-    double_bottom_dates = detect_double_bottoms(prices, dates, tolerance=0.5)
-    if double_bottom_dates:
-        cur.execute('''
-            INSERT INTO double_bottoms (symbol, first_bottom_date, second_bottom_date)
-            VALUES (?, ?, ?)
-        ''', (symbol, double_bottom_dates[0], double_bottom_dates[1]))
+    double_bottoms = detect_double_bottoms(prices, dates, symbol, tolerance=0.05)
+    if double_bottoms:
+        for (symbol, first_bottom_date, second_bottom_date) in double_bottoms:
+            cur.execute('''
+                INSERT INTO double_bottoms (symbol, first_bottom_date, second_bottom_date)
+                VALUES (?, ?, ?)
+            ''', (symbol, first_bottom_date, second_bottom_date))
 
     conn.commit()
     conn.close()
 
-# API fetch function to return patterns by timestamp, not indices
-def fetch_pattern_by_type(pattern_type):
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-
-    if pattern_type == 'double_bottom':
-        cur.execute("SELECT symbol, first_bottom_date FROM double_bottoms ORDER BY RANDOM() LIMIT 1")
-    elif pattern_type == 'volatility':
-        cur.execute("SELECT symbol, start_date FROM high_volatility ORDER BY RANDOM() LIMIT 1")
-
-    result = cur.fetchone()
-    if result:
-        symbol, timestamp = result
-        conn.close()
-        return {'symbol': symbol, 'timestamp': timestamp}  # Return timestamp instead of index
-    else:
-        conn.close()
-        return {'error': 'No patterns found.'}, 404
-
-# Detect and store patterns for multiple symbols
+# Example usage for multiple symbols
 symbols = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',  # Technology
     'JNJ', 'UNH', 'PFE',  # Healthcare
     'JPM', 'BAC',  # Financials
     'TSLA', 'HD',  # Consumer Discretionary
     'XOM', 'CVX',  # Energy
     'VZ', 'T',  # Telecom
     'PG', 'KO',  # Consumer Staples
-    'BA', 'CAT'  # Industrials
+    'BA', 'CAT', # Industrials
+    'NVDA','AAPL', 'MSFT', 'GOOGL', 'AMZN'  # Technology
 ]
 
 for symbol in symbols:

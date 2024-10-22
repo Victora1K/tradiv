@@ -20,50 +20,47 @@ const Dashboard = () => {
   const [entryPrices, setEntryPrices] = useState([]);
   const [averageEntryPrice, setAverageEntryPrice] = useState(0);
   const [averageShortPrice, setAverageShortPrice] = useState(0);
-  const [patternType, setPatternType] = useState(''); // Track selected pattern
+  const [patternType, setPatternType] = useState('random');  // Default to random pattern
   const dataRef = useRef(stockData);
 
-  // UseEffect to automatically trigger playback when new data is fetched
+  // Ensure playback starts after new data is fetched
   useEffect(() => {
     if (stockData.dates.length > 0) {
-      // Ensure data is available before starting playback
       startPlayback();
     }
-  }, [stockData]);  // Watch for changes in stockData and trigger playback
+  }, [stockData]);
 
-  const fetchPatternData = async (newChart = false) => {
+  const fetchPatternData = async () => {
     try {
       let apiEndpoint = '';
+
       if (patternType === 'double_bottom') {
-        apiEndpoint = `http://localhost:5000/api/stocks/double_bottoms${newChart ? '?new=true' : ''}`;
+        apiEndpoint = `https://tradenerves.com/api/stocks/double_bottoms`;
       } else if (patternType === 'volatility') {
-        apiEndpoint = `http://localhost:5000/api/stocks/high_volatility${newChart ? '?new=true' : ''}`;
-      } else if (patternType === 'random') {
-        apiEndpoint = 'http://localhost:5000/api/random_stock';
+        apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
+      } else {
+        apiEndpoint = 'https://tradenerves.com/api/random_stock';
       }
-  
-      // Reset playback and chart before fetching new data
+
+      // Reset the chart before fetching new data
       resetPlayback();
-  
+
       const response = await axios.get(apiEndpoint);
       const { symbol, timestamp } = response.data;
       setSymbol(symbol);
-  
+
       // Fetch new stock data from the returned timestamp
       await fetchStockData(symbol, timestamp);
-  
+
       setCurrentIndex(0);  // Reset index for new chart playback
-      startPlayback();  // Start playback automatically after new data is fetched
     } catch (error) {
       console.error("Error fetching pattern data:", error);
     }
   };
-  
 
-  // Fetch stock data from the given timestamp
   const fetchStockData = async (symbol, timestamp) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/stock_prices/${symbol}/${timestamp}`);
+      const response = await axios.get(`https://tradenerves.com/api/stock_prices/${symbol}/${timestamp}`);
       if (response.data.length > 0) {
         const processedData = {
           dates: response.data.map(item => item.date),
@@ -82,31 +79,6 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate total portfolio value
-  const currentPrice = (displayData && displayData.close && displayData.close.length > currentIndex)
-    ? displayData.close[currentIndex]
-    : 0;
-
-  const totalPortfolio = accountValue + (sharesOwned * currentPrice) - (shortedShares * currentPrice);
-
-  // Calculate and update average price
-  const calculateAverageEntryPrice = (prices) => {
-    if (prices.length === 0) return 0;
-    return prices.reduce((acc, price) => acc + price, 0) / prices.length;
-  };
-
-  useEffect(() => {
-    if (sharesOwned > 0) {
-      setAverageEntryPrice(calculateAverageEntryPrice(entryPrices));
-    }
-    if (shortedShares > 0) {
-      setAverageShortPrice(calculateAverageEntryPrice(shortedPrices)); // Update average short price
-    }
-    const profit = (currentPrice - averageEntryPrice) * sharesOwned + (averageShortPrice - currentPrice) * shortedShares;
-    setProfitLoss(profit);
-  }, [currentPrice, sharesOwned, shortedShares, averageEntryPrice, averageShortPrice]);
-
-  // Playback control logic
   const startPlayback = () => {
     if (intervalId) return;
     const id = setInterval(() => {
@@ -143,7 +115,30 @@ const Dashboard = () => {
     setDisplayData({ dates: [], open: [], high: [], low: [], close: [] });
   };
 
-  // Enter a buy position at the previous index
+  // Portfolio calculation logic
+  const currentPrice = (displayData && displayData.close && displayData.close.length > currentIndex)
+    ? displayData.close[currentIndex]
+    : 0;
+
+  const totalPortfolio = accountValue + (sharesOwned * currentPrice) - (shortedShares * currentPrice);
+
+  const calculateAverageEntryPrice = (prices) => {
+    if (prices.length === 0) return 0;
+    return prices.reduce((acc, price) => acc + price, 0) / prices.length;
+  };
+
+  useEffect(() => {
+    if (sharesOwned > 0) {
+      setAverageEntryPrice(calculateAverageEntryPrice(entryPrices));
+    }
+    if (shortedShares > 0) {
+      setAverageShortPrice(calculateAverageEntryPrice(shortedPrices)); // Update average short price
+    }
+    const profit = (currentPrice - averageEntryPrice) * sharesOwned + (averageShortPrice - currentPrice) * shortedShares;
+    setProfitLoss(profit);
+  }, [currentPrice, sharesOwned, shortedShares, averageEntryPrice, averageShortPrice]);
+
+  // Trading functions (buy, short, exit)
   const enterPosition = () => {
     if (currentIndex > 1 && displayData && displayData.close.length > currentIndex - 1) {
       const entryPrice = displayData.close[currentIndex - 1];
@@ -159,7 +154,6 @@ const Dashboard = () => {
     }
   };
 
-  // Short the stock at the previous index
   const shortPosition = () => {
     if (currentIndex > 1 && displayData && displayData.close.length > currentIndex - 1) {
       const shortPrice = displayData.close[currentIndex - 1];
@@ -177,7 +171,6 @@ const Dashboard = () => {
     }
   };
 
-  // Exit all positions at the previous index
   const exitPosition = () => {
     if (currentIndex > 1 && displayData && displayData.close.length > currentIndex - 1) {
       const exitPrice = displayData.close[currentIndex - 1];
@@ -202,6 +195,13 @@ const Dashboard = () => {
     }
   };
 
+  const buttonStyle = {
+    margin: '5px',
+    padding: '10px',
+    fontSize: '14px',
+    minWidth: '120px',
+  };
+
   return (
     <div>
       <h1>Stock Trading Dashboard</h1>
@@ -217,16 +217,12 @@ const Dashboard = () => {
       <h3>Shorted Shares: {shortedShares}</h3>
 
       {/* Pattern Selection Dropdown */}
-      <select onChange={(e) => setPatternType(e.target.value)} value={patternType}>
-        <option value="">Select Pattern</option>
+      <select onChange={(e) => setPatternType(e.target.value)} value={patternType} style={buttonStyle}>
+        <option value="random">Random Data</option>
         <option value="double_bottom">Double Bottom</option>
         <option value="volatility">High Volatility</option>
-        <option value="random">Random Data</option>
       </select>
-      <button onClick={() => fetchPatternData(false)}>Fetch Pattern Data</button>
-
-      {/* Next Chart Button */}
-      <button onClick={() => fetchPatternData(true)}>Next Chart</button>
+      <button onClick={fetchPatternData} style={buttonStyle}>Fetch Pattern Data</button>
 
       <CandlestickChart displayData={displayData} symbol={symbol} />
 
