@@ -3,9 +3,11 @@ import axios from 'axios';
 import CandlestickChart from './CandlestickChart';
 import PlaybackControls from './PlaybackControls';
 import TradingControls from './TradingControls';
+import Navbar from './Navbar';
+import PatternCarousel from './PatternCarousel';
 import { startPlayback, stopPlayback, resetPlayback } from '../utils/PlaybackLogic';
 
-const Dashboard = () => {
+const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   const [symbol, setSymbol] = useState('');
   const [stockData, setStockData] = useState({ dates: [], open: [], high: [], low: [], close: [] });
   const [displayData, setDisplayData] = useState({ dates: [], open: [], high: [], low: [], close: [] });
@@ -35,13 +37,16 @@ const Dashboard = () => {
       let apiEndpoint = '';
 
       if (patternType === 'double_bottom') {
+        //apiEndpoint = `http://127.0.0.1:5000/api/stocks/double_bottoms`;
         apiEndpoint = `https://tradenerves.com/api/stocks/double_bottoms`;
       } else if (patternType === 'volatility') {
+        //apiEndpoint = `http://127.0.0.1:5000/api/stocks/high_volatility`;
         apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
       } else {
+        //apiEndpoint = 'http://127.0.0.1:5000/api/random_stock';
         apiEndpoint = 'https://tradenerves.com/api/random_stock';
       }
-
+      //http://127.0.0.1:5000 dev env
       // Reset the chart before fetching new data
       resetPlayback();
 
@@ -61,6 +66,7 @@ const Dashboard = () => {
   const fetchStockData = async (symbol, timestamp) => {
     try {
       const response = await axios.get(`https://tradenerves.com/api/stock_prices/${symbol}/${timestamp}`);
+      //const response = await axios.get(`http://127.0.0.1:5000/api/stock_prices/${symbol}/${timestamp}`);
       if (response.data.length > 0) {
         const processedData = {
           dates: response.data.map(item => item.date),
@@ -146,6 +152,7 @@ const Dashboard = () => {
         setSharesOwned(prevShares => prevShares + 1);
         setEntryPrices(prevPrices => [...prevPrices, entryPrice]);
         setAccountValue(prevValue => prevValue - entryPrice);
+        setTotalAccountValue(prevValue => prevValue - entryPrice);
       } else {
         console.log("Not enough balance to buy shares.");
       }
@@ -162,7 +169,8 @@ const Dashboard = () => {
       if (accountValue >= marginRequired) {
         setShortedShares(prevShares => prevShares + 1);
         setShortedPrices(prevPrices => [...prevPrices, shortPrice]);
-        setAccountValue(prevValue => prevValue - shortPrice);
+        setAccountValue(prevValue => prevValue + shortPrice);
+        setTotalAccountValue(prevValue => prevValue + shortPrice);
       } else {
         console.log("Not enough balance to short shares. You need at least 5x the short price as margin.");
       }
@@ -177,14 +185,19 @@ const Dashboard = () => {
 
       if (sharesOwned > 0) {
         const profit = (exitPrice - averageEntryPrice) * sharesOwned;
+        console.log("toal profit:" +profit)
         setProfitLoss(prevProfitLoss => prevProfitLoss + profit);
         setAccountValue(prevValue => prevValue + (sharesOwned * exitPrice));
+        setTotalAccountValue(prevValue => prevValue + (sharesOwned * exitPrice));
         setSharesOwned(0);
         setEntryPrices([]);
       } else if (shortedShares > 0) {
         const totalShortedProfit = shortedPrices.reduce((acc, shortPrice) => acc + (shortPrice - exitPrice), 0);
+        console.log("Total shorted profit: " +totalShortedProfit)
         setProfitLoss(prevProfitLoss => prevProfitLoss + totalShortedProfit);
-        setAccountValue(prevValue => prevValue + (shortedShares * exitPrice));
+        setAccountValue(prevValue => prevValue - (shortedShares * exitPrice));
+        setTotalAccountValue(prevValue => prevValue - (shortedShares * exitPrice));
+        //setAccountValue(prevValue => prevValue + (shortedShares * exitPrice));
         setShortedShares(0);
         setShortedPrices([]);
       } else {
@@ -204,17 +217,19 @@ const Dashboard = () => {
 
   return (
     <div>
-      <h1>Stock Trading Dashboard</h1>
+      
+      <PatternCarousel />
+      <h1>Pattern Trading Dashboard</h1>
 
-      <h2>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h2>
+      {/*<h2>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h2>*/}
       <h2 style={{ color: profitLoss >= 0 ? 'green' : 'red' }}>
         Relative Profit/Loss: ${profitLoss.toFixed(2)}
       </h2>
-      <h3>Average Entry Price: ${averageEntryPrice.toFixed(2)}</h3>
-      <h3>Average Short Price: ${averageShortPrice.toFixed(2)}</h3>
+      <h3>Average Entry Price: ${averageEntryPrice.toFixed(2)}  Average Short Price: ${averageShortPrice.toFixed(2)}</h3>
+  
 
-      <h3>Shares Owned: {sharesOwned}</h3>
-      <h3>Shorted Shares: {shortedShares}</h3>
+      <h3>Shares Owned: {sharesOwned} Shorted Shares: {shortedShares}</h3>
+     
 
       {/* Pattern Selection Dropdown */}
       <select onChange={(e) => setPatternType(e.target.value)} value={patternType} style={buttonStyle}>
@@ -225,6 +240,7 @@ const Dashboard = () => {
       <button onClick={fetchPatternData} style={buttonStyle}>Fetch Pattern Data</button>
 
       <CandlestickChart displayData={displayData} symbol={symbol} />
+      <h3>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h3>
 
       <PlaybackControls
         startPlayback={startPlayback}
@@ -239,6 +255,8 @@ const Dashboard = () => {
         exitPosition={exitPosition}
         shortPosition={shortPosition}
       />
+      <a href='https://a.webull.com/NwcK53BxT9BKOwjEn5'> Get started with Webull! </a>
+      <footer> Donate crypto! 3N73gLrHnLNNGFQNo8yF5xKB1r3mfyjRMF </footer>
     </div>
   );
 };

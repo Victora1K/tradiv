@@ -52,6 +52,7 @@ mkdir src/components
 nano src/components/Dashboard.js
 
 yarn add axios eslint-config-react-app --dev
+yarn add react-router-dom
 
 yarn start
 yarn build

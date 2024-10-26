@@ -63,7 +63,7 @@ const CandlestickChart = ({ displayData, symbol }) => {
     return (
         <div>
             {/* Theme Toggle Button */}
-            <button onClick={toggleTheme}>
+            <button style={ThemeStyle} onClick={toggleTheme}>
                 Switch to {isDarkTheme ? 'Light' : 'Dark'} Theme
             </button>
 
@@ -88,6 +88,16 @@ const CandlestickChart = ({ displayData, symbol }) => {
             />
         </div>
     );
+};
+
+const ThemeStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+  overflow: 'hidden',
+  backgroundColor: '#f5f5f5',
+  color: 'black',
 };
 
 export default CandlestickChart;
