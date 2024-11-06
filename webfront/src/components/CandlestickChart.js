@@ -3,16 +3,37 @@ import Plot from 'react-plotly.js';
 
 const CandlestickChart = ({ displayData, symbol }) => {
     const [isDarkTheme, setIsDarkTheme] = useState(false);
+    const [isSymbolScrambled, setIsSymbolScrambled] = useState(true);
+    
 
     // Toggle theme function
     const toggleTheme = () => {
         setIsDarkTheme(prevTheme => !prevTheme);
     };
 
+    const generateSymbol = () => {
+        const randLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        let rand_symbol = '';
+        for (let i = 0; i < 3; i++) {
+            const letterIndex = Math.floor(Math.random() * 10);
+            rand_symbol += randLetters[letterIndex]
+        }
+        return rand_symbol;
+
+    };
+
+    const toggleSymbolDisplay = () => {
+        setIsSymbolScrambled(prev => !prev);
+        if (!isSymbolScrambled) {
+            setScrambledSymbol(generateSymbol());
+        }
+    };
+    const [scrambledSymbol, setScrambledSymbol] = useState(generateSymbol())
+
     // Define the layout for dark and light themes
     const darkThemeLayout = {
         title: {
-            text: `${symbol} Candlestick Chart`,
+            text: `${isSymbolScrambled ? scrambledSymbol : symbol} Candlestick Chart`,
             font: { color: '#FFFFFF' },
         },
         xaxis: {
@@ -37,7 +58,7 @@ const CandlestickChart = ({ displayData, symbol }) => {
 
     const lightThemeLayout = {
         title: {
-            text: `${symbol} Candlestick Chart`,
+            text: `${isSymbolScrambled ? scrambledSymbol : symbol} Candlestick Chart`,
             font: { color: '#000000' },
         },
         xaxis: {
@@ -65,6 +86,10 @@ const CandlestickChart = ({ displayData, symbol }) => {
             {/* Theme Toggle Button */}
             <button style={ThemeStyle} onClick={toggleTheme}>
                 Switch to {isDarkTheme ? 'Light' : 'Dark'} Theme
+            </button>
+
+            <button style={ThemeStyle} onClick={toggleSymbolDisplay}>
+                {isSymbolScrambled ? 'Un' : ''}scramble Ticker
             </button>
 
             {/* Plotly Candlestick Chart */}

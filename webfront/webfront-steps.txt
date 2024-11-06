@@ -38,6 +38,8 @@ gunicorn --bind 0.0.0.0:5000 wsgi:app
 **************************frontend replication**************************
 ssh ec2-user@<your-ec2-ip-address>
 cd /path/to/your/project/directory
+components]$ sudo cp -r ~/tradiv/webfront/src/components/* ./
+
 
 yarn create react-app my-new-app
 cd my-new-app

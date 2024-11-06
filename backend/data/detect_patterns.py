@@ -5,50 +5,45 @@ import numpy as np
 # Path to the database
 db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../db/stocks.db'))
 
+#collects prices list from database
 def calculate_volatility(prices, period=14):
+    #np.diff subtracts index value i from i+1 and returns a list i.e. np.diff[ 2 3 5] returns [1 2] & prices[:-1] returns all
+    #except the last value of prices list or array
     daily_returns = np.diff(prices) / prices[:-1]
     volatility = np.std(daily_returns[-period:])
     return volatility
 
 # Updated double bottom detection to handle multiple bottoms and return the symbol
-def detect_double_bottoms(prices, dates, symbol, tolerance=0.05):
+def detect_double_bottoms(prices, dates, symbol, tolerance=0.0000125):
     double_bottoms = []  # To store multiple pairs of double bottoms (tuples of symbol, start and end dates)
     current_bottom = None  # Track the current lowest bottom
+    bottom_index = []
+    bottom_price = []
     
-    for i in range(1, len(prices) - 1):
-        print(f"Checking index {i} with price {prices[i]} (previous: {prices[i-1]}, next: {prices[i+1]})")
+    for i in range(2, len(prices) - 2):
+        #print(f"Checking index {i} with price {prices[i]} (previous: {prices[i-1]}, next: {prices[i+1]})")
 
         # Detect a potential bottom: price is lower than the previous and next day
-        if prices[i] <= prices[i-1] and prices[i] < prices[i+1]:
-            print(f"Found potential bottom at index {i}, price {prices[i]}")
+        if prices[i] <= prices[i-1] and prices[i] < prices[i+1] and prices[i-1] <= prices[i-2] and prices[i+1] <= prices[i+2]:
+            #print(f"Found potential bottom at index {i}, price {prices[i]}")
+            bottom_index.append(i)
+            bottom_price.append(prices[i])
 
-            # If we haven't locked in the first bottom, set it to current
-            if current_bottom is None:
-                print(f"Setting current bottom to index {i}, price {prices[i]}")
-                current_bottom = i
-
-            # If we already have a locked first bottom, check for a second bottom within tolerance
-            elif current_bottom is not None:
-                previous_bottom_price = prices[current_bottom]
-                current_price = prices[i]
-                
-                # Calculate the price difference relative to the first bottom
-                price_difference = abs(current_price - previous_bottom_price) / previous_bottom_price
-                print(f"Comparing second bottom at index {i} with first bottom at index {current_bottom}")
-                print(f"Price difference: {price_difference}, Tolerance: {tolerance}")
-
-                # Check if the current bottom is within tolerance and more than 5 candles apart
-                if price_difference <= tolerance and i - current_bottom >= 2:
-                    print(f"Double bottom confirmed between indices {current_bottom} and {i}")
-
-                    # Store the pair of bottoms (symbol, dates of the two bottoms)
-                    double_bottoms.append((symbol, dates[current_bottom], dates[i]))
-
-                    # Reset current_bottom to None to search for more double bottoms
-                    current_bottom = None
-                else:
-                    print(f"Bottom at index {i} does not meet criteria (tolerance or distance).")
-                    current_bottom = i  # Re-assign this as the new potential first bottom
+            for bottom in range(len(bottom_index)):
+                for second_bottom in range(bottom + 1, len(bottom_index)):
+                    price_difference = abs(bottom_price[bottom] - bottom_price[second_bottom]) / bottom_price[bottom]
+                    
+                    if price_difference <= tolerance and second_bottom - bottom >= 5:
+                        if bottom_price[bottom] not in double_bottoms :
+                            #print(f"Price difference: {price_difference}, Tolerance: {tolerance}")                  
+                            #print(f"Double bottom confirmed between indices {bottom} and {second_bottom}")
+                            #print(f"Double bottom match between prices {bottom_price[bottom]} and {bottom_price[second_bottom]}")
+                            #print(f"Double bottom confirmed between indices {bottom} and {second_bottom} already in list")
+                            double_bottoms.append((symbol, dates[bottom - 2], dates[second_bottom]))
+                        else:
+                            print(f"Bottom at index {bottom} does not meet criteria (tolerance or distance).")
+                            # Re-assign this as the new potential first bottom
+                                                
     
     # Return the list of double bottom pairs (if any)
     if len(double_bottoms) > 0:
@@ -66,11 +61,12 @@ def detect_and_store_patterns(symbol):
     cur.execute(f"SELECT low, date FROM stock_prices WHERE symbol = ? ORDER BY date ASC", (symbol,))
     rows = cur.fetchall()
 
-    prices = [row[0] for row in rows]  # Using low prices
+    prices = [row[0] for row in rows]  # Using low prices    
     dates = [row[1] for row in rows]
 
+
     # Detect high volatility periods
-    for i in range(14, len(prices)):
+    for i in range(14, len(prices), 14):
         lows = prices[i-14:i]  # Using low prices for volatility calculation
         volatility = calculate_volatility(lows)
         if volatility > 0.02:  # Threshold for high volatility
@@ -80,7 +76,7 @@ def detect_and_store_patterns(symbol):
             ''', (symbol, dates[i-14], dates[i], volatility))
 
     # Detect double bottoms
-    double_bottoms = detect_double_bottoms(prices, dates, symbol, tolerance=0.05)
+    double_bottoms = detect_double_bottoms(prices, dates, symbol, tolerance=0.0018)
     if double_bottoms:
         for (symbol, first_bottom_date, second_bottom_date) in double_bottoms:
             cur.execute('''

@@ -24,6 +24,8 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   const [averageShortPrice, setAverageShortPrice] = useState(0);
   const [patternType, setPatternType] = useState('random');  // Default to random pattern
   const dataRef = useRef(stockData);
+  const localBaseUrl = 'http://127.0.0.1:5000';
+  const prodBaseUrl = 'https://tradenerves.com';
 
   // Ensure playback starts after new data is fetched
   useEffect(() => {
@@ -32,19 +34,26 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
     }
   }, [stockData]);
 
+  const getBaseUrl = () => {
+    if (location.hostname === 'localhost') {
+      return localBaseUrl;
+    }
+    return prodBaseUrl;
+  }
+
   const fetchPatternData = async () => {
     try {
       let apiEndpoint = '';
 
       if (patternType === 'double_bottom') {
-        //apiEndpoint = `http://127.0.0.1:5000/api/stocks/double_bottoms`;
-        apiEndpoint = `https://tradenerves.com/api/stocks/double_bottoms`;
+        apiEndpoint = `${getBaseUrl()}/api/stocks/double_bottoms`;
+        //apiEndpoint = `https://tradenerves.com/api/stocks/double_bottoms`;
       } else if (patternType === 'volatility') {
-        //apiEndpoint = `http://127.0.0.1:5000/api/stocks/high_volatility`;
-        apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
+        apiEndpoint = `${getBaseUrl()}/api/stocks/high_volatility`;
+        //apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
       } else {
-        //apiEndpoint = 'http://127.0.0.1:5000/api/random_stock';
-        apiEndpoint = 'https://tradenerves.com/api/random_stock';
+        apiEndpoint = `${getBaseUrl()}/api/random_stock`;
+        //apiEndpoint = `https://tradenerves.com/api/random_stock`;
       }
       //http://127.0.0.1:5000 dev env
       // Reset the chart before fetching new data
@@ -65,8 +74,8 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
 
   const fetchStockData = async (symbol, timestamp) => {
     try {
-      const response = await axios.get(`https://tradenerves.com/api/stock_prices/${symbol}/${timestamp}`);
-      //const response = await axios.get(`http://127.0.0.1:5000/api/stock_prices/${symbol}/${timestamp}`);
+      //const response = await axios.get(`https://tradenerves.com/api/stock_prices/${symbol}/${timestamp}`);
+      const response = await axios.get(`http://127.0.0.1:5000/api/stock_prices/${symbol}/${timestamp}`);
       if (response.data.length > 0) {
         const processedData = {
           dates: response.data.map(item => item.date),
