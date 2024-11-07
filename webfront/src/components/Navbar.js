@@ -22,6 +22,7 @@ const navbarStyle = {
   padding: '10px 20px',
   backgroundColor: '#333',
   color: 'white',
+  width: '90vw'
 };
 
 const navLinksStyle = {

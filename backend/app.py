@@ -134,5 +134,28 @@ def double_bottom_stocks():
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
+#Hammer API 
+@app.route('/api/stocks/hammer', methods=['GET'])
+def hammer_stocks():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        #Select Hammer pattern
+        cur.execute('SELECT symbol, start_date FROM hammer ORDER BY RANDOM() LIMIT 1')
+        hammer_row = cur.fetchone()
+        
+        if hammer_row:
+            symbol = hammer_row['symbol']
+            hammer_date = hammer_row['start_date']
+            
+            return jsonify({'symbol': symbol, 'timestamp': hammer_date})
+        else:
+            return jsonify({'error': 'No hammer patterns found'}), 404
+    except Exception as e:
+        print(f"Error occured: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+        
+
 if __name__ == '__main__':
     app.run(debug=True)

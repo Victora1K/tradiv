@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import CandlestickChart from './CandlestickChart';
-import PlaybackControls from './PlaybackControls';
-import TradingControls from './TradingControls';
+//import PlaybackControls from './PlaybackControls';
+//import TradingControls from './TradingControls';
 import Navbar from './Navbar';
 import PatternCarousel from './PatternCarousel';
-import { startPlayback, stopPlayback, resetPlayback } from '../utils/PlaybackLogic';
+//import { startPlayback, stopPlayback, resetPlayback } from '../utils/PlaybackLogic';
 
 const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   const [symbol, setSymbol] = useState('');
@@ -51,6 +51,8 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
       } else if (patternType === 'volatility') {
         apiEndpoint = `${getBaseUrl()}/api/stocks/high_volatility`;
         //apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
+      } else if (patternType === 'hammer') {
+        apiEndpoint = `${getBaseUrl()}/api/stocks/hammer`;
       } else {
         apiEndpoint = `${getBaseUrl()}/api/random_stock`;
         //apiEndpoint = `https://tradenerves.com/api/random_stock`;
@@ -159,9 +161,25 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
       const entryPrice = displayData.close[currentIndex - 1];
       if (accountValue >= entryPrice) {
         setSharesOwned(prevShares => prevShares + 1);
-        setEntryPrices(prevPrices => [...prevPrices, entryPrice]);
-        setAccountValue(prevValue => prevValue - entryPrice);
-        setTotalAccountValue(prevValue => prevValue - entryPrice);
+        setEntryPrices(prevPrices => [...prevPrices, entryPrice, entryPrice, entryPrice]);
+        setAccountValue(prevValue => prevValue -  entryPrice);
+        setTotalAccountValue(prevValue => prevValue -  entryPrice);
+      } else {
+        console.log("Not enough balance to buy shares.");
+      }
+    } else {
+      console.error("Invalid buy position: previous index is out of bounds or no data available.");
+    }
+  };
+
+  const enterFivePositions = () => {
+    if (currentIndex > 1 && displayData && displayData.close.length > currentIndex - 1) {
+      const entryPrice = displayData.close[currentIndex - 1];
+      if (accountValue >= entryPrice) {
+        setSharesOwned(prevShares => prevShares + 5);
+        setEntryPrices(prevPrices => [...prevPrices, entryPrice, entryPrice, entryPrice, entryPrice, entryPrice ]);
+        setAccountValue(prevValue => prevValue - 5 * entryPrice);
+        setTotalAccountValue(prevValue => prevValue - 5 * entryPrice);
       } else {
         console.log("Not enough balance to buy shares.");
       }
@@ -180,6 +198,24 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
         setShortedPrices(prevPrices => [...prevPrices, shortPrice]);
         setAccountValue(prevValue => prevValue + shortPrice);
         setTotalAccountValue(prevValue => prevValue + shortPrice);
+      } else {
+        console.log("Not enough balance to short shares. You need at least 5x the short price as margin.");
+      }
+    } else {
+      console.error("Invalid short position: previous index is out of bounds or no data available.");
+    }
+  };
+
+  const shortFivePositions = () => {
+    if (currentIndex > 1 && displayData && displayData.close.length > currentIndex - 1) {
+      const shortPrice = displayData.close[currentIndex - 1];
+
+      const marginRequired = shortPrice * 5;
+      if (accountValue >= marginRequired) {
+        setShortedShares(prevShares => prevShares + 5);
+        setShortedPrices(prevPrices => [...prevPrices, shortPrice, shortPrice, shortPrice, shortPrice, shortPrice]);
+        setAccountValue(prevValue => prevValue + 5 *shortPrice);
+        setTotalAccountValue(prevValue => prevValue + 5 *shortPrice);
       } else {
         console.log("Not enough balance to short shares. You need at least 5x the short price as margin.");
       }
@@ -218,22 +254,21 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   };
 
   const buttonStyle = {
-    margin: '5px',
-    padding: '10px',
-    fontSize: '14px',
-    minWidth: '120px',
+    margin: '8px',
+    padding: '8px',
+    fontSize: '10px',
+    minWidth: '60px',
   };
 
   return (
     <div>
-      
-      <PatternCarousel />
       <h1>Pattern Trading Dashboard</h1>
+      <PatternCarousel />
+      
 
       {/*<h2>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h2>*/}
-      <h2 style={{ color: profitLoss >= 0 ? 'green' : 'red' }}>
-        Relative Profit/Loss: ${profitLoss.toFixed(2)}
-      </h2>
+ 
+      
       <h3>Average Entry Price: ${averageEntryPrice.toFixed(2)}  Average Short Price: ${averageShortPrice.toFixed(2)}</h3>
   
 
@@ -245,25 +280,26 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
         <option value="random">Random Data</option>
         <option value="double_bottom">Double Bottom</option>
         <option value="volatility">High Volatility</option>
+        <option value="hammer">Hammer</option>
       </select>
       <button onClick={fetchPatternData} style={buttonStyle}>Fetch Pattern Data</button>
-
-      <CandlestickChart displayData={displayData} symbol={symbol} />
+      <h2 style={{ color: profitLoss >= 0 ? 'green' : 'red' }}>
+        Relative Profit/Loss: ${profitLoss.toFixed(2)}
+      </h2>
       <h3>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h3>
-
-      <PlaybackControls
-        startPlayback={startPlayback}
-        stopPlayback={stopPlayback}
-        resetPlayback={resetPlayback}
-        speedUpPlayback={() => setPlaySpeed(prev => Math.max(100, prev / 2))}
-        slowDownPlayback={() => setPlaySpeed(prev => prev * 2)}
+      <CandlestickChart displayData={displayData} symbol={symbol} 
+              startPlayback={startPlayback}
+              stopPlayback={stopPlayback}
+              resetPlayback={resetPlayback}
+              speedUpPlayback={() => setPlaySpeed(prev => Math.max(100, prev / 2))}
+              slowDownPlayback={() => setPlaySpeed(prev => prev * 2)}
+              enterPosition={enterPosition}
+              exitPosition={exitPosition}
+              shortPosition={shortPosition}
+              enterFivePositions={enterFivePositions}
+              shortFivePositions={shortFivePositions}
       />
 
-      <TradingControls
-        enterPosition={enterPosition}
-        exitPosition={exitPosition}
-        shortPosition={shortPosition}
-      />
       <a href='https://a.webull.com/NwcK53BxT9BKOwjEn5'> Get started with Webull! </a>
       <footer> Donate crypto! 3N73gLrHnLNNGFQNo8yF5xKB1r3mfyjRMF </footer>
     </div>

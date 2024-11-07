@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Plot from 'react-plotly.js';
 
-const CandlestickChart = ({ displayData, symbol }) => {
+const CandlestickChart = ({ displayData, symbol, startPlayback, stopPlayback, resetPlayback, speedUpPlayback, slowDownPlayback, enterPosition, exitPosition, shortPosition, enterFivePositions, shortFivePositions }) => {
     const [isDarkTheme, setIsDarkTheme] = useState(false);
     const [isSymbolScrambled, setIsSymbolScrambled] = useState(true);
     
@@ -12,7 +12,7 @@ const CandlestickChart = ({ displayData, symbol }) => {
     };
 
     const generateSymbol = () => {
-        const randLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        const randLetters = ['A', 'B', 'X', 'D', 'O', 'F', 'G', 'H', 'V', 'J'];
         let rand_symbol = '';
         for (let i = 0; i < 3; i++) {
             const letterIndex = Math.floor(Math.random() * 10);
@@ -83,15 +83,14 @@ const CandlestickChart = ({ displayData, symbol }) => {
 
     return (
         <div>
+            <p1>
             {/* Theme Toggle Button */}
             <button style={ThemeStyle} onClick={toggleTheme}>
-                Switch to {isDarkTheme ? 'Light' : 'Dark'} Theme
-            </button>
+                Switch to {isDarkTheme ? 'Light' : 'Dark'} Theme </button>
 
             <button style={ThemeStyle} onClick={toggleSymbolDisplay}>
-                {isSymbolScrambled ? 'Un' : ''}scramble Ticker
-            </button>
-
+                {isSymbolScrambled ? 'Un' : ''}scramble Ticker</button>
+            </p1>
             {/* Plotly Candlestick Chart */}
             <Plot
                 data={[
@@ -107,10 +106,25 @@ const CandlestickChart = ({ displayData, symbol }) => {
                     },
                 ]}
                 layout={isDarkTheme ? darkThemeLayout : lightThemeLayout}
+                style={ChartStyle}
                 config={{
                     displayModeBar: false, // Hide the plotly toolbar for a cleaner look
                 }}
             />
+                <div style={buttonContainer}>
+      <button style={buttonStyle} onClick={startPlayback}>Start</button>
+      <button style={buttonStyle}  onClick={stopPlayback}>Pause</button>
+      <button style={buttonStyle}  onClick={resetPlayback}>Reset</button>
+      <button style={buttonStyle}  onClick={speedUpPlayback}>Speed Up</button>
+      <button style={buttonStyle}  onClick={slowDownPlayback}>Slow Down</button>
+    </div>
+    <div style={buttonContainer}>
+        <button style={buttonStyle}  onClick={enterPosition}> Buy </button>
+        <button style={buttonStyle}  onClick={enterFivePositions}> Enter x5 </button>  {/* New short button */}
+        <button style={buttonStyle}  onClick={exitPosition}> Exit </button>
+        <button style={buttonStyle}  onClick={shortPosition}> Short </button>  {/* New short button */}
+        <button style={buttonStyle}  onClick={shortFivePositions}> Short x5 </button>
+      </div>
         </div>
     );
 };
@@ -124,5 +138,24 @@ const ThemeStyle = {
   backgroundColor: '#f5f5f5',
   color: 'black',
 };
+
+const ChartStyle = {
+    width: '90vw',
+    height: '60vh'
+};
+
+const buttonStyle = {
+    margin: '4px',
+    padding: '4px',
+    fontSize: '10px',
+    minWidth: '60px',
+  };
+
+const buttonContainer = {
+    width: '90vw',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+}
 
 export default CandlestickChart;

@@ -27,6 +27,14 @@ CREATE TABLE IF NOT EXISTS stock_prices (
 ''')
 
 cur.execute('''
+CREATE TABLE IF NOT EXISTS hammer (
+    id INTEGER PRIMARY KEY,
+    symbol TEXT,
+    start_date
+)
+''')
+
+cur.execute('''
 CREATE TABLE IF NOT EXISTS high_volatility (
     id INTEGER PRIMARY KEY,
     symbol TEXT,

@@ -41,7 +41,7 @@ const patternsInfoData = [
 
                 </div>
             ))}
-            <button>...more </button>
+            <button> ...more coming soon </button>
                   <a href='https://a.webull.com/NwcK53BxT9BKOwjEn5'> Get started with Webull! </a>
                   
         </div>
