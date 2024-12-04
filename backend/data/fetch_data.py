@@ -3,8 +3,8 @@ import requests
 import sqlite3
 from datetime import datetime, timezone
 
-API_KEY = '4ku7YB5AIpIL_IRvfIiI4xZV09EoLGD6'
-#API_KEY = 'gNUdx8Rrob9OtDQSGK9EBX7K179qpNjQ'
+#API_KEY = '4ku7YB5AIpIL_IRvfIiI4xZV09EoLGD6'        #Prod API Key
+API_KEY = 'gNUdx8Rrob9OtDQSGK9EBX7K179qpNjQ'         #Test API Key
 
 # Set the database path using absolute path resolution
 db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../db/stocks.db'))
@@ -43,16 +43,9 @@ def fetch_and_store_stock_data(symbol):
     conn.commit()
     conn.close()
 
-# List of top 20 highest market cap stocks
+# List of top 7 highest market cap stocks
 symbols = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA',  # Technology
-    'JNJ', 'UNH', 'PFE',  # Healthcare
-    'JPM', 'BAC',  # Financials
-    'TSLA', 'HD',  # Consumer Discretionary
-    'XOM', 'CVX',  # Energy
-    'VZ', 'T',  # Telecom
-    'PG', 'KO',  # Consumer Staples
-    'BA', 'CAT'  # Industrials
+    'AAPL', 'NVDA', 'TSLA' , 'SPY' , 'MSFT', 'GOOGL', 'AMZN' # Technology
 ]
 
 # Fetch stock data for the listed symbols

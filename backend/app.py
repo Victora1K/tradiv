@@ -2,6 +2,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS  # Import CORS
 import sqlite3
 import os
+from data.intra_day import get_intra_day
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for the entire Flask app
@@ -51,6 +53,31 @@ def get_stock_data_from_timestamp(symbol, timestamp):
         print(f"Error occurred: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500
 
+@app.route('/api/stock_prices_intra/<symbol>/<timestamp>', methods=['GET'])
+def get_stock_intra_from_timestamp(symbol, timestamp):
+    try:
+        rows = get_intra_day(symbol, timestamp)
+        
+         
+
+        if rows:
+            results = [
+                {
+                    'date': datetime.fromtimestamp(row['t'] / 1000, timezone.utc).strftime('%y/%m/%d-%H:%M'),
+                    'open': row['o'],
+                    'high': row['h'],
+                    'low': row['l'],
+                    'close': row['c'],
+                    'volume': row['v']
+                }
+                for row in rows
+            ]
+            return jsonify(results)
+        else:
+            return jsonify({'error': 'No stock data found from this timestamp'}), 404
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 # Random Stock and Timestamp API
 @app.route('/api/random_stock', methods=['GET'])
@@ -156,6 +183,28 @@ def hammer_stocks():
         print(f"Error occured: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500
         
+        
+#Green day API 
+@app.route('/api/stocks/green', methods=['GET'])
+def green_stocks():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        #Select green pattern
+        cur.execute('SELECT symbol, start_date FROM green ORDER BY RANDOM() LIMIT 1')
+        green_row = cur.fetchone()
+        
+        if green_row:
+            symbol = green_row['symbol']
+            green_date = green_row['start_date']
+            
+            return jsonify({'symbol': symbol, 'timestamp': green_date})
+        else:
+            return jsonify({'error': 'No green patterns found'}), 404
+    except Exception as e:
+        print(f"Error occured: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

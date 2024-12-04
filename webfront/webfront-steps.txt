@@ -232,3 +232,8 @@ Create a new A record for www if needed:
 Type: A
 Name: www.yourdomain.com
 Value: Your EC2 instance’s public IP.
+
+
+
+****bootstrap ***********
+yarn add bootstrap@v5.3.3

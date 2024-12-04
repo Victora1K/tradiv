@@ -26,8 +26,8 @@ def is_valid_low(prices):
             low_index.append(i)
             
     valid_lows.append((low_index))  
-    print(f"{valid_lows} are lows fed to valid lows")      
-    print(f"{low_index} are lows fed to low index")
+    #print(f"{valid_lows} are lows fed to valid lows")      
+    #print(f"{low_index} are lows fed to low index")
     return low_index
     
     
@@ -35,7 +35,7 @@ def is_valid_low(prices):
 def detect_hammer(prices, prices_close, prices_high, prices_open, dates, symbol):
     valid_hammers = []
     check_for_lows = is_valid_low(prices)
-    print(f"{check_for_lows} are lows fed to hammer for symbol {symbol}")
+    #print(f"{check_for_lows} are lows fed to hammer for symbol {symbol}")
     #low_prices = check_for_lows[0]
     #low_indices = check_for_lows[1]
     if check_for_lows:
@@ -56,7 +56,7 @@ def detect_hammer(prices, prices_close, prices_high, prices_open, dates, symbol)
         valid_hammers = []  #Because there's no lows.
         # Return the list of double bottom pairs (if any)
     if len(valid_hammers) > 0:
-        print(f"Valid hammers found: {valid_hammers}")
+        #print(f"Valid hammers found: {valid_hammers}")
         return valid_hammers
     else:
         print(f"No Valid hammers found.")
@@ -73,7 +73,7 @@ def detect_double_bottoms(prices, dates, symbol, tolerance=0.0000125):
     #bottom_price = []
     
     check_for_lows = is_valid_low(prices)
-    print(f"{check_for_lows} are lows fed to double_bottom for symbol {symbol}")
+    #print(f"{check_for_lows} are lows fed to double_bottom for symbol {symbol}")
     
     
 
@@ -108,6 +108,20 @@ def detect_double_bottoms(prices, dates, symbol, tolerance=0.0000125):
     else:
         print(f"No double bottoms found.")
         return []
+    
+def detect_green(prices, prices_close, prices_high, prices_open, dates, symbol):
+    valid_greens = []
+    print(f"All prices {len(prices)}")
+    for candle in range(len(prices)-1):
+        #print(f"{prices[candle]} occured at date: {dates[candle]}")
+        if prices_close[candle] - prices_open[candle] > 4 and prices_high[candle] - prices_close[candle] < 0.28:
+            valid_greens.append((symbol , dates[candle]))
+            #print(f"Appending {dates[candle]} and {symbol} ticker to valid greens. ")
+            #print(f"Found a green day at date: {dates[candle]}")
+    if len(valid_greens) > 0:
+        #print(f"Valid green days found: {valid_greens}")
+        print(len(valid_greens))
+    return valid_greens
 
 def detect_and_store_patterns(symbol):
     conn = sqlite3.connect(db_path)
@@ -151,7 +165,13 @@ def detect_and_store_patterns(symbol):
                     INSERT INTO hammer (symbol, start_date)
                     VALUES (?,?)
                     ''',(symbol, start_date))
-            
+    green_days = detect_green(prices, prices_close, prices_high, prices_open, dates, symbol)
+    if green_days:
+        for (symbol, start_date) in green_days:
+            cur.execute('''
+                        INSERT INTO green (symbol, start_date)
+                        VALUES (?,?)
+                        ''',(symbol, start_date))
             
 
     conn.commit()
@@ -159,14 +179,7 @@ def detect_and_store_patterns(symbol):
 
 # Example usage for multiple symbols
 symbols = [
-    'JNJ', 'UNH', 'PFE',  # Healthcare
-    'JPM', 'BAC',  # Financials
-    'TSLA', 'HD',  # Consumer Discretionary
-    'XOM', 'CVX',  # Energy
-    'VZ', 'T',  # Telecom
-    'PG', 'KO',  # Consumer Staples
-    'BA', 'CAT', # Industrials
-    'NVDA','AAPL', 'MSFT', 'GOOGL', 'AMZN'  # Technology
+    'AAPL', 'NVDA', 'TSLA' , 'SPY' , 'MSFT', 'GOOGL', 'AMZN' # Technology
 ]
 
 for symbol in symbols:

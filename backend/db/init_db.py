@@ -35,6 +35,14 @@ CREATE TABLE IF NOT EXISTS hammer (
 ''')
 
 cur.execute('''
+CREATE TABLE IF NOT EXISTS green (
+    id INTEGER PRIMARY KEY,
+    symbol TEXT,
+    start_date
+)
+''')
+
+cur.execute('''
 CREATE TABLE IF NOT EXISTS high_volatility (
     id INTEGER PRIMARY KEY,
     symbol TEXT,

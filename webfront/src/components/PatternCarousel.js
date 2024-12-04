@@ -6,6 +6,7 @@ import hammer from '../image-patterns/hammer.png';
 import hangingman from '../image-patterns/hanging-man.png';
 import threeblackcrows from '../image-patterns/three-black-crows.png';
 
+
 const patternData = [
   { name: 'Hammer', imgSrc: hammer, link: '/patterns#hammer' },
   { name: 'Three Black Crows', imgSrc: threeblackcrows, link: '/patterns#threeblackcrows' },
@@ -34,12 +35,10 @@ const PatternCarousel = () => {
 
   return (
     <div style={carouselContainerStyle}>
-      {/*<button onClick={handlePrev} style={navButtonStyle}>&lt;</button> */}
       <a href={patternData[currentIndex].link} style={patternItemStyle}>
         <img src={patternData[currentIndex].imgSrc} alt={patternData[currentIndex].name} style={imageStyle} />
         <p>{patternData[currentIndex].name}</p>
       </a>
-      {/*<button onClick={handleNext} style={navButtonStyle}>&gt;</button>*/}
     </div>
   );
 };

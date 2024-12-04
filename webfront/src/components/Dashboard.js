@@ -7,6 +7,7 @@ import Navbar from './Navbar';
 import PatternCarousel from './PatternCarousel';
 //import { startPlayback, stopPlayback, resetPlayback } from '../utils/PlaybackLogic';
 
+
 const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   const [symbol, setSymbol] = useState('');
   const [stockData, setStockData] = useState({ dates: [], open: [], high: [], low: [], close: [] });
@@ -23,6 +24,7 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   const [averageEntryPrice, setAverageEntryPrice] = useState(0);
   const [averageShortPrice, setAverageShortPrice] = useState(0);
   const [patternType, setPatternType] = useState('random');  // Default to random pattern
+  const [dayTrade, setdayTrade] = useState(false)
   const dataRef = useRef(stockData);
   const localBaseUrl = 'http://127.0.0.1:5000';
   const prodBaseUrl = 'https://tradenerves.com';
@@ -53,6 +55,8 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
         //apiEndpoint = `https://tradenerves.com/api/stocks/high_volatility`;
       } else if (patternType === 'hammer') {
         apiEndpoint = `${getBaseUrl()}/api/stocks/hammer`;
+      } else if (patternType === 'green') {
+        apiEndpoint = `${getBaseUrl()}/api/stocks/green`;
       } else {
         apiEndpoint = `${getBaseUrl()}/api/random_stock`;
         //apiEndpoint = `https://tradenerves.com/api/random_stock`;
@@ -75,6 +79,7 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
   };
 
   const fetchStockData = async (symbol, timestamp) => {
+    if (!dayTrade) {
     try {
       //const response = await axios.get(`https://tradenerves.com/api/stock_prices/${symbol}/${timestamp}`);
       const response = await axios.get(`http://127.0.0.1:5000/api/stock_prices/${symbol}/${timestamp}`);
@@ -93,9 +98,38 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
       }
     } catch (error) {
       console.error("Error fetching stock data:", error);
+    }} else if (dayTrade) {
+      try {
+        //const response = await axios.get(`https://tradenerves.com/api/stock_prices_intra/${symbol}/${timestamp}`);
+        const response = await axios.get(`http://127.0.0.1:5000/api/stock_prices_intra/${symbol}/${timestamp}`);
+        if (response.data.length > 0) {
+          const processedData = {
+            dates: response.data.map(item => item.date),
+            open: response.data.map(item => parseFloat(item.open)),
+            high: response.data.map(item => parseFloat(item.high)),
+            low: response.data.map(item => parseFloat(item.low)),
+            close: response.data.map(item => parseFloat(item.close)),
+          };
+          setStockData(processedData);  // Set the stock data
+          dataRef.current = processedData;  // Save to reference for playback
+        } else {
+          console.error("No stock data found for the selected timestamp.");
+        }
+      } catch (error) {
+        console.error("Error fetching stock data:", error);
+      }
     }
-  };
 
+  };
+  const changedayTrade = () => {
+    if (dayTrade) {
+      setdayTrade(false)
+    } else if (!dayTrade) {
+      setdayTrade(true)
+    } else {
+      setdayTrade(false)
+    }
+  }
   const startPlayback = () => {
     if (intervalId) return;
     const id = setInterval(() => {
@@ -260,8 +294,14 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
     minWidth: '60px',
   };
 
+  const ChartStyle = {
+    width: '100%',
+    maxwidth: '8000px',
+    height: '60vh',
+};
+
   return (
-    <div>
+    <div >
       <h1>Pattern Trading Dashboard</h1>
       <PatternCarousel />
       
@@ -280,13 +320,17 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
         <option value="random">Random Data</option>
         <option value="double_bottom">Double Bottom</option>
         <option value="volatility">High Volatility</option>
+        <option value="green">Solid Green</option>
         <option value="hammer">Hammer</option>
       </select>
       <button onClick={fetchPatternData} style={buttonStyle}>Fetch Pattern Data</button>
       <h2 style={{ color: profitLoss >= 0 ? 'green' : 'red' }}>
+        
+        <button onClick={changedayTrade}> Currently {dayTrade ? 'DayTrad' : 'Swingi'}ing. Click to  {dayTrade ? 'Swing' : 'DayTrade'} </button>
         Relative Profit/Loss: ${profitLoss.toFixed(2)}
       </h2>
       <h3>Total Portfolio Value: ${totalPortfolio.toFixed(2)}</h3>
+      <div> 
       <CandlestickChart displayData={displayData} symbol={symbol} 
               startPlayback={startPlayback}
               stopPlayback={stopPlayback}
@@ -299,7 +343,7 @@ const Dashboard = ({ totalAccountValue, setTotalAccountValue }) => {
               enterFivePositions={enterFivePositions}
               shortFivePositions={shortFivePositions}
       />
-
+      </div>
       <a href='https://a.webull.com/NwcK53BxT9BKOwjEn5'> Get started with Webull! </a>
       <footer> Donate crypto! 3N73gLrHnLNNGFQNo8yF5xKB1r3mfyjRMF </footer>
     </div>
